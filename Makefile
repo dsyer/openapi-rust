@@ -10,7 +10,7 @@ package := $(build)/package.json
 
 ALL: $(schema) $(wasm)
 
-src := $(wildcard $(srcs)/model/*.rs)
+src := $(wildcard $(srcs)/*.rs)
 
 $(wasm): $(src) $(crate)
 	wasm-pack build --target web
