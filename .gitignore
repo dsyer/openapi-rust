@@ -1,0 +1,15 @@
+/openapi
+/target
+**/*.rs.bk
+Cargo.lock
+bin/
+pkg/
+wasm-pack.log
+package-lock.json
+
+### VS Code ###
+.vscode/
+
+.bin/
+*.wat
+*.wasm
