@@ -8,7 +8,7 @@ crate := $(openapi)/Cargo.toml
 wasm := $(build)/openapi_rust_bg.wasm
 package := $(build)/package.json
 
-ALL: $(schema) $(wasm)
+ALL: $(schema) $(wasm) $(package)
 
 src := $(wildcard $(srcs)/*.rs)
 
