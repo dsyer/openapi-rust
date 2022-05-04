@@ -8,6 +8,7 @@ edition = "2018"
 serde = "^1.0"
 serde_derive = "^1.0"
 serde_json = "^1.0"
+wasmer = "^2.2.1"
 
 [profile.release]
 # Tell `rustc` to optimize for small code size.
