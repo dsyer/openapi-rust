@@ -1,0 +1,8 @@
+/openapi
+/target
+wasm-pack.log
+package-lock.json
+
+.bin/
+*.wat
+*.wasm
