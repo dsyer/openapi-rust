@@ -100,9 +100,67 @@ The `Makefile` tells you what it is doing as it builds. These are the main steps
 
         $ wasm-pack build --target web
 
-## WIP
+## Calling WASM from Rust
+
+Set up dependencies:
 
 ```
+$ cd runtime
 $ cargo install cargo-edit
-$ cargo add wasmer-runtime
+$ cargo add wasmtime
+```
+
+Write a `main.rs` that ships a string into the WASM function and extracts the result:
+
+```Rust
+use std::error;
+use std::convert::TryInto;
+use std::str;
+use wasmtime::*;
+
+fn main() -> Result<(), Box<dyn error::Error>> {
+
+let engine = Engine::default();
+    let module = Module::new(&engine, include_bytes!("../../wasm/pkg/openapi_rust_bg.wasm"))?;
+    let mut store = Store::new(&engine, {});
+    let import_object = [
+        Func::wrap(&mut store, |_: i32, _: i32| {}).into()
+    ];
+    let instance = Instance::new(&mut store, &module, &import_object)?;
+    let memory = instance.get_memory(&mut store, "memory").unwrap();
+
+    let xform = instance.get_typed_func(&mut store, "xform")?;
+    let input = "{}";
+    for (i, c) in input.bytes().enumerate() {
+        memory.data_mut(&mut store)[8 + i] = c;
+    };
+    xform.call(&mut store, (0, 8, input.len() as i32))?;
+    let ptr = u32::from_le_bytes(memory.data(&mut store)[0..4].try_into().unwrap()) as usize;
+    let len = u32::from_le_bytes(memory.data(&mut store)[4..8].try_into().unwrap()) as usize;
+    println!("{}", str::from_utf8(&memory.data(&mut store)[ptr..ptr+len]).unwrap());
+
+    Ok(())
+}
+```
+
+NOTE: The `xform` function is defined as `&str -> String` in Rust, but it comes out as `(ret: i32, ptr: i32, len: i32) -> ()` in the WASM. The result is encoded as a struct of `{*char,size_t}` at the pointer `ret`.
+
+Run it:
+
+```
+$ cargo run | jq
+    Finished dev [unoptimized + debuginfo] target(s) in 0.06s
+     Running `target/debug/openapi-rust-runtime`
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "labels": {
+      "app": "demo"
+    }
+  },
+  "spec": {
+    ...
+  }
+}
 ```
