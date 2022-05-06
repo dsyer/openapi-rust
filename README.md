@@ -99,3 +99,10 @@ The `Makefile` tells you what it is doing as it builds. These are the main steps
 3. Compile to WASM:
 
         $ wasm-pack build --target web
+
+## WIP
+
+```
+$ cargo install cargo-edit
+$ cargo add wasmer-runtime
+```

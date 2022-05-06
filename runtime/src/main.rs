@@ -1,27 +1,23 @@
 use std::error;
 
-use wasmer::{Store, Module, Instance, Value, imports};
+use wasmtime::*;
 
 fn main() -> Result<(), Box<dyn error::Error>> {
-    let module_wat = r#"
-    (module
-    (type $t0 (func (param i32) (result i32)))
-    (func $add_one (export "add_one") (type $t0) (param $p0 i32) (result i32)
-        get_local $p0
-        i32.const 1
-        i32.add))
-    "#;
-
-    let store = Store::default();
-    let module = Module::new(&store, &module_wat)?;
+    let engine = Engine::default();
+    let module = Module::new(&engine, include_bytes!("../../wasm/pkg/openapi_rust_bg.wasm"))?;
+    let mut store = Store::new(&engine, {});
     // The module doesn't import anything, so we create an empty import object.
-    let import_object = imports! {};
-    let instance = Instance::new(&module, &import_object)?;
+    let import_object = [];
+    let instance = Instance::new(&mut store, &module, &import_object)?;
+    let memory = instance.get_memory(&mut store, "memory").unwrap();
 
-    let add_one = instance.exports.get_function("add_one")?;
-    let result = add_one.call(&[Value::I32(42)])?;
-    assert_eq!(result[0], Value::I32(43));
-    println!("Hello World! {}", result[0].i32().unwrap());
+    let xform = instance.get_typed_func(&mut store, "xform")?;
+    let input = "{}";
+    for (i, c) in input.bytes().enumerate() {
+        memory.data_mut(&mut store)[i] = c;
+    };
+    let result = xform.call(&mut store, (0, input.len() as i32))?;
+    println!("Result {:?}", result);
 
     Ok(())
 }
