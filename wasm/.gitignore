@@ -1,4 +1,4 @@
-/openapi
+/openapi-k8s
 /target
 wasm-pack.log
 package-lock.json

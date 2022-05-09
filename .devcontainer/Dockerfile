@@ -16,6 +16,8 @@ RUN curl -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly
 
 RUN curl https://get.sdkman.io | bash
 
+RUN curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
 RUN bash -c 'source "/home/vscode/.sdkman/bin/sdkman-init.sh" && sdk install java 11.0.14-tem'
 
 ENV JAVA_HOME=/home/vscode/.sdkman/candidates/java/current

@@ -5,6 +5,7 @@ pkg/
 
 ### VS Code ###
 .vscode/
+*.code-workspace
 
 .bin/
 *.wat
