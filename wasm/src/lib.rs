@@ -6,14 +6,10 @@ use serde_json;
 
 use openapi::models::*;
 
-pub struct Buffer {
-    ptr: u32,
-    len: u32,
-}
+use wasm_bindgen::prelude::wasm_bindgen;
 
-#[no_mangle]
-pub fn xform(buffer: *mut Buffer, value: &[u8]) {
-    let json = str::from_utf8(&value).unwrap();
+#[wasm_bindgen]
+pub fn xform(json: &str) -> String {
     let mut deployment: IoK8sApiAppsV1Deployment = serde_json::from_str(json).unwrap();
     deployment.api_version = match deployment.api_version {
         Some(value) => Some(value),
@@ -41,11 +37,7 @@ pub fn xform(buffer: *mut Buffer, value: &[u8]) {
         "demo"
     };
     deployment.spec = Some(spec(deployment.spec, app));
-    let result = Vec::from(serde_json::to_string(&deployment).unwrap().as_bytes());
-    unsafe {
-        (*buffer).len = result.len() as u32;
-        (*buffer).ptr = result.as_ptr() as u32;
-    }
+    return serde_json::to_string(&deployment).unwrap();
 }
 
 fn spec(
