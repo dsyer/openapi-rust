@@ -13,7 +13,7 @@ ALL: $(schema) $(wasm)
 src := $(wildcard $(srcs)/*.rs)
 
 $(wasm): $(src) $(crate)
-	cargo build --release
+	wasm-pack build --target web
 
 $(crate): $(schema)
 	jbang org.openapitools:openapi-generator-cli:6.0.0-beta generate -g rust -o $(openapi) -i $(schema)
