@@ -2,19 +2,18 @@
 srcs := src
 
 build := pkg
+target := target
 openapi := openapi
 schema := $(openapi)/k8s.json
 crate := $(openapi)/Cargo.toml
 wasm := $(build)/openapi_rust_bg.wasm
-package := $(build)/package.json
 
-ALL: $(schema) $(wasm) $(package)
+ALL: $(schema) $(wasm)
 
 src := $(wildcard $(srcs)/*.rs)
 
 $(wasm): $(src) $(crate)
-	wasm-pack build --target web
-	cat $(package) | jq '. + {type:"module"}' > .tmp.json && mv .tmp.json $(package)
+	cargo build --release
 
 $(crate): $(schema)
 	jbang org.openapitools:openapi-generator-cli:6.0.0-beta generate -g rust -o $(openapi) -i $(schema)
@@ -27,4 +26,4 @@ $(schema):
 		> $(schema)
 
 clean:
-	rm -rf $(build) $(openapi)
+	rm -rf $(build) $(openapi) $(target)

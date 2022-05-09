@@ -5,11 +5,14 @@ use wasmtime::*;
 
 fn main() -> Result<(), Box<dyn error::Error>> {
     let engine = Engine::default();
-    let module = Module::new(&engine, include_bytes!("../../wasm/pkg/openapi_rust_bg.wasm"))?;
+    let module = Module::new(&engine, include_bytes!("../../wasm/target/wasm32-unknown-unknown/release/openapi_rust.wasm"))?;
     let mut store = Store::new(&engine, {});
-    // The module doesn't import anything, so we create an empty import object.
+    // Ugly hack to provide shim for imports.
     let import_object = [
-        Func::wrap(&mut store, |_: i32, _: i32| {}).into()
+        Func::wrap(&mut store, |_:i32| {}).into(),
+        Func::wrap(&mut store, |_: i32, _: i32| {}).into(),
+        Func::wrap(&mut store, |_: i32| -> i32 {0}).into(),
+        Func::wrap(&mut store, |_:i32| {}).into(),
     ];
     let instance = Instance::new(&mut store, &module, &import_object)?;
     let memory = instance.get_memory(&mut store, "memory").unwrap();
@@ -22,6 +25,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     xform.call(&mut store, (0, 8, input.len() as i32))?;
     let ptr = u32::from_le_bytes(memory.data(&mut store)[0..4].try_into().unwrap()) as usize;
     let len = u32::from_le_bytes(memory.data(&mut store)[4..8].try_into().unwrap()) as usize;
+
     println!("{}", str::from_utf8(&memory.data(&mut store)[ptr..ptr+len]).unwrap());
 
     Ok(())
