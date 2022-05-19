@@ -1,32 +1,24 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use std::str;
 
 use serde_json;
 
-use openapi::models::*;
+use k8s_openapi::api::apps::v1::*;
+use k8s_openapi::api::core::v1::*;
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::*;
 
 use wasm_bindgen::prelude::wasm_bindgen;
 
 #[wasm_bindgen]
 pub fn xform(json: &str) -> String {
-    let mut deployment: IoK8sApiAppsV1Deployment = serde_json::from_str(json).unwrap();
-    deployment.api_version = match deployment.api_version {
-        Some(value) => Some(value),
-        None => Some(String::from("apps/v1")),
-    };
-    deployment.kind = match deployment.kind {
-        Some(value) => Some(value),
-        None => Some(String::from("Deployment")),
-    };
-    deployment.metadata = Some(deployment_metadata(
-        deployment.metadata,
+    let mut deployment: Deployment = serde_json::from_str(json).unwrap();
+    deployment.metadata = deployment_metadata(
+        Some(deployment.metadata),
         String::from("demo"),
-    )); // Randomize?
+    ); // Randomize?
     let app = if let Some(value) = deployment
         .metadata
-        .as_ref()
-        .unwrap()
         .labels
         .as_ref()
         .unwrap()
@@ -41,25 +33,25 @@ pub fn xform(json: &str) -> String {
 }
 
 fn spec(
-    spec: Option<Box<IoK8sApiAppsV1DeploymentSpec>>,
+    spec: Option<DeploymentSpec>,
     app: &str,
-) -> Box<IoK8sApiAppsV1DeploymentSpec> {
+) -> DeploymentSpec {
     let mut result = if let Some(value) = spec {
         value
     } else {
-        IoK8sApiAppsV1DeploymentSpec {
+        DeploymentSpec {
             min_ready_seconds: None,
             paused: None,
             progress_deadline_seconds: None,
             replicas: None,
             revision_history_limit: None,
-            selector: IoK8sApimachineryPkgApisMetaV1LabelSelector {
+            selector: LabelSelector {
                 match_expressions: None,
                 match_labels: None,
             }
             .into(),
             strategy: None,
-            template: IoK8sApiCoreV1PodTemplateSpec {
+            template: PodTemplateSpec {
                 metadata: None,
                 spec: None,
             }
@@ -73,21 +65,21 @@ fn spec(
 }
 
 fn template(
-    template: Box<IoK8sApiCoreV1PodTemplateSpec>,
+    template: PodTemplateSpec,
     app: &str,
-) -> Box<IoK8sApiCoreV1PodTemplateSpec> {
+) -> PodTemplateSpec {
     let mut result = template.clone();
     result.metadata = Some(deployment_metadata(result.metadata, app.to_string()));
     result.spec = Some(pod_spec(result.spec));
     return result;
 }
 
-fn pod_spec(spec: Option<Box<IoK8sApiCoreV1PodSpec>>) -> Box<IoK8sApiCoreV1PodSpec> {
+fn pod_spec(spec: Option<PodSpec>) -> PodSpec {
     return match spec {
         Some(value) => value,
         None => {
-            let mut containers: Vec<IoK8sApiCoreV1Container> = Vec::new();
-            containers.push(IoK8sApiCoreV1Container {
+            let mut containers: Vec<Container> = Vec::new();
+            containers.push(Container {
                 args: None,
                 command: None,
                 env: None,
@@ -111,7 +103,7 @@ fn pod_spec(spec: Option<Box<IoK8sApiCoreV1PodSpec>>) -> Box<IoK8sApiCoreV1PodSp
                 volume_mounts: None,
                 working_dir: None,
             });
-            IoK8sApiCoreV1PodSpec {
+            PodSpec {
                 active_deadline_seconds: None,
                 affinity: None,
                 automount_service_account_token: None,
@@ -154,9 +146,9 @@ fn pod_spec(spec: Option<Box<IoK8sApiCoreV1PodSpec>>) -> Box<IoK8sApiCoreV1PodSp
 }
 
 fn selector(
-    selector: Box<IoK8sApimachineryPkgApisMetaV1LabelSelector>,
+    selector: LabelSelector,
     app: &str,
-) -> Box<IoK8sApimachineryPkgApisMetaV1LabelSelector> {
+) -> LabelSelector {
     let mut result = selector;
     match result.match_expressions {
         Some(_) => {}
@@ -168,13 +160,13 @@ fn selector(
 }
 
 fn match_labels(
-    labels: Option<HashMap<String, String>>,
+    labels: Option<BTreeMap<String, String>>,
     app: &str,
-) -> Option<HashMap<String, String>> {
-    let mut result: HashMap<String, String> = if let Some(value) = labels {
+) -> Option<BTreeMap<String, String>> {
+    let mut result: BTreeMap<String, String> = if let Some(value) = labels {
         value.clone()
     } else {
-        HashMap::new()
+        BTreeMap::new()
     };
     if !result.contains_key(&String::from("app")) {
         result.insert(String::from("app"), app.to_string());
@@ -183,13 +175,13 @@ fn match_labels(
 }
 
 fn deployment_metadata(
-    metadata: Option<Box<IoK8sApimachineryPkgApisMetaV1ObjectMeta>>,
+    metadata: Option<ObjectMeta>,
     app: String,
-) -> Box<IoK8sApimachineryPkgApisMetaV1ObjectMeta> {
+) -> ObjectMeta {
     let mut result = if let Some(value) = metadata {
         value
     } else {
-        IoK8sApimachineryPkgApisMetaV1ObjectMeta {
+        ObjectMeta {
             annotations: None,
             cluster_name: None,
             creation_timestamp: None,
@@ -212,13 +204,13 @@ fn deployment_metadata(
     result.labels = if let Some(value) = result.labels {
         Some(value)
     } else {
-        Some(HashMap::new())
+        Some(BTreeMap::new())
     };
     result.labels = Some(labels(result.labels.unwrap(), app));
     return result.into();
 }
 
-fn labels(labels: HashMap<String, String>, app: String) -> HashMap<String, String> {
+fn labels(labels: BTreeMap<String, String>, app: String) -> BTreeMap<String, String> {
     let mut result = labels.clone();
     if !result.contains_key(&String::from("app")) {
         result.insert(String::from("app"), app);

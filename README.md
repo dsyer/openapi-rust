@@ -10,16 +10,11 @@ NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
 service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   5d3h
 ```
 
-and Rust including Cargo and the [`wasm-pack`](https://github.com/rustwasm/wasm-pack) tool. You also need the [OpenAPI Tools CLI](https://github.com/OpenAPITools/openapi-generator), which we download and run using [Jbang](https://www.jbang.dev/). If you have all those installed (e.g. by using the `shell.nix`) then you can just run `make` (ignore warnings) and the build artifacts drop into `./pkg`:
+and Rust including Cargo and the [`wasm-pack`](https://github.com/rustwasm/wasm-pack) tool. If you have all those installed (e.g. by using the `shell.nix`) then you can just run `make` (ignore warnings) and the build artifacts drop into `./pkg`:
 
 ```
 $ cd wasm
 $ make
-mkdir -p openapi
-kubectl get --raw /openapi/v2 | \
-        jq 'with_entries(select([.key] | inside(["definitions", "components", "info", "swagger", "openapi"]))) + {paths:{}}' \
-        > openapi/k8s.json
-jbang org.openapitools:openapi-generator-cli:6.0.0-beta generate -g rust -o openapi -i openapi/k8s.json
 ...
 wasm-pack build --target web
 [INFO]: Checking for the Wasm target...
@@ -48,7 +43,7 @@ The Rust function that is exported from the WASM looks like this (in `src/lib.rs
 ```Rust
 #[wasm_bindgen]
 pub fn xform(json: &str) -> String {
-    let mut deployment: IoK8sApiAppsV1Deployment = serde_json::from_str(json).unwrap();
+    let mut deployment: Deployment = serde_json::from_str(json).unwrap();
     // ...
     deployment.spec = Some(spec(deployment.spec, app));
     return serde_json::to_string(&deployment).unwrap();
@@ -69,7 +64,13 @@ export { wasm, xform_object as xform };
 export default wasm;
 ```
 
-Here's a REPL session where we use the WASM to populate a `Deployment` from an empty input:
+Here's a REPL session where we use the WASM to populate a `Deployment` from an empty input. You need to tell Node.js that the `pkg` bundle is a module first:
+
+```
+$ cat pkg/package.json | jq '. + {type:"module"}' > pkg/tmp.json && mv pkg/tmp.json pkg/package.json
+```
+
+then
 
 ```javascript
 > var {xform} = await import('./bundle.js')
@@ -86,20 +87,6 @@ Here's a REPL session where we use the WASM to populate a `Deployment` from an e
 ```
 
 You can reset everything with `make clean`.
-
-## The Build Steps
-
-The `Makefile` tells you what it is doing as it builds. These are the main steps:
-
-1. Extract the schema from the Kubernetes API server objects:
-
-        $ kubectl get --raw /openapi/v2 | jq 'with_entries(select([.key] | inside(["definitions", "components", "info", "swagger", "openapi"]))) + {paths:{}}' > k8s.json
-2. Generate the Rust language bindings (including any CRDs):
-
-        $ jbang org.openapitools:openapi-generator-cli:6.0.0-beta generate -g rust -i k8s.json
-3. Compile to WASM:
-
-        $ wasm-pack build --target web
 
 ## Calling WASM from Rust
 
