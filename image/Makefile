@@ -13,7 +13,8 @@ $(wasm): $(src) $(crate)/Cargo.toml
 	wasm-pack build --target web
 
 $(crate)/Cargo.toml: $(schema)
-	./mvnw generate-sources
+	jbang org.openapitools:openapi-generator-cli:6.0.0-beta generate -g rust -o target/rust -i target/k8s.json \
+		--type-mappings v1.ListMeta=k8s_openapi::apimachinery::pkg::apis::meta::v1::ListMeta,v1.ObjectMeta=k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta
 	cp -r target/rust/src/models src
 
 $(schema):
@@ -27,4 +28,4 @@ $(schema):
 	sed -i -e 's,#/definitions/io.k8s.apimachinery.pkg.apis.meta.,#/definitions/,' -e 's,#/definitions/com.example.,#/definitions/,' $(schema)
 
 clean:
-	rm -rf $(build) $(openapi) $(target)
+	rm -rf $(build) $(target)
