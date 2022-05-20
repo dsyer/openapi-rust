@@ -11,6 +11,8 @@ src := $(shell find src -name '*.rs')
 
 $(wasm): $(src) $(crate)/Cargo.toml
 	wasm-pack build --target web
+	jq '. + {type:"module"}' pkg/package.json > pkg/tmp.json
+	mv pkg/tmp.json pkg/package.json
 
 $(crate)/Cargo.toml: $(schema)
 	jbang org.openapitools:openapi-generator-cli:6.0.0-beta generate -g rust -o target/rust -i target/k8s.json \
