@@ -1,5 +1,5 @@
 [package]
-name = "openapi-rust-runtime"
+name = "runtime"
 version = "0.1.0"
 authors = ["Dave Syer <dsyer@vmware.com>"]
 edition = "2018"

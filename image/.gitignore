@@ -2,6 +2,7 @@
 /target
 wasm-pack.log
 package-lock.json
+node_modules/
 
 .bin/
 *.wat

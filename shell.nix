@@ -6,7 +6,7 @@ mkShell {
   buildInputs = [
     python3Packages.python
     python3Packages.venvShellHook
-    rustup rustc cargo wasm-pack openssl gccStdenv glibc pkg-config jbang emscripten nodejs cmake check protobuf protobufc pkg-config wasmtime wabt
+    rustup rustc cargo wasm-pack openssl gccStdenv glibc pkg-config jbang jq emscripten nodejs cmake check protobuf protobufc pkg-config wasmtime wabt
   ];
 
   venvDir = "./.venv";
