@@ -6,6 +6,7 @@ bin/
 pkg/
 wasm-pack.log
 package-lock.json
+node_modules/
 
 ### VS Code ###
 .vscode/
