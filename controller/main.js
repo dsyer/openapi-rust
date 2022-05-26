@@ -25,7 +25,6 @@ class V1Image {
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
 
-const k8sApi = kc.makeApiClient(k8s.AppsV1Api);
 const k8sApiImage = kc.makeApiClient(k8s.CustomObjectsApi);
 
 const watch = new k8s.Watch(kc);
@@ -79,6 +78,13 @@ async function reconcileNow(obj) {
 	reconcileScheduled = false;
 	const image = new V1Image(obj);
 	log(`Reconciling ${image.metadata.name}`);
+	var status = new V1ImageStatus();
+	if (image.spec.image.includes("nginx")) {
+		status.complete = true;
+		status.latestImage = `${image.spec.image}@latest`;
+	}
+	image.status = status;
+	await k8sApiImage.replaceNamespacedCustomObjectStatus(CUSTOMRESOURCE_GROUP, CUSTOMRESOURCE_VERSION, image.metadata.namespace, CUSTOMRESOURCE_PLURAL, image.metadata.name, image);
 }
 
 async function main() {

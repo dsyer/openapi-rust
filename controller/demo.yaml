@@ -3,4 +3,4 @@ kind: Image
 metadata:
   name: demo
 spec:
-  image: localhost:5000/apps/petclinic
+  image: localhost:5000/apps/nginx
