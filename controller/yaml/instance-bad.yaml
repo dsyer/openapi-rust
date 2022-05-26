@@ -1,7 +1,0 @@
-apiVersion: clux.dev/v1
-kind: Foo
-metadata:
-  name: bad
-spec:
-  name: bad foo
-  info: bad person, good instance

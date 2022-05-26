@@ -15,8 +15,9 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     };
 
     let engine = Engine::default();
-    // let module = Module::new(&engine, include_bytes!("../../wasm/target/wasm32-unknown-unknown/release/openapi_rust.wasm"))?;
-    let module = Module::new(&engine, include_bytes!("../../image/pkg/image_bg.wasm"))?;
+    let module = Module::new(&engine, include_bytes!("../../wasm/target/wasm32-unknown-unknown/release/openapi_rust.wasm"))?;
+    // This one is async so you need to await the result and main would have to block?
+    // let module = Module::new(&engine, include_bytes!("../../image/pkg/image_bg.wasm"))?;
     let mut store = Store::new(&engine, {});
     let import_object = [];
     let instance = Instance::new(&mut store, &module, &import_object)?;
