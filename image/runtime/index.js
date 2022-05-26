@@ -9,7 +9,7 @@ function get(url, headers) {
 				data += chunk.toString();
 			});
 			response.on('end', () => {
-				resolve(data);
+				resolve({data: data, headers: response.headers, status: response.statusCode});
 			});
 			response.on('error', (error) => {
 				reject(error);
@@ -18,11 +18,11 @@ function get(url, headers) {
 	});
 }
 
-export function getWithHeaders(url, headers) {
-	// var result = await get(url, headers);
-	var result = {};
-	if (url.includes("nginx")) {
-		result["Docker-Content-Digest"] = "sha256:randomstuff";
-	}
-	return JSON.stringify({ "headers": result });
+export async function getWithHeaders(url, headers) {
+	var result = await get(url, headers);
+	return JSON.stringify(result);
+}
+
+export function log(str) {
+	console.log(str);
 }
