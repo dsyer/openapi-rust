@@ -19,10 +19,6 @@ function get(url, headers) {
 }
 
 export async function getWithHeaders(url, headers) {
-	// var result = await get(url, headers);
 	var result = await get(url, headers);
-	if (url.includes("nginx")) {
-		result["Docker-Content-Digest"] = "sha256:randomstuff";
-	}
 	return JSON.stringify(result);
 }

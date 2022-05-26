@@ -14,8 +14,13 @@ extern "C" {
 }
 
 #[wasm_bindgen]
-pub async fn xform() -> JsValue {
+pub async fn xform(value: String) -> JsValue {
     unsafe {
-        return getWithHeaders("http://localhost:5000/v2/", "{}").await;
+        return getWithHeaders(
+            &value,
+            r#"{"accept": "application/vnd.docker.distribution.manifest.v2+json"}"#,
+        )
+        .await;
     }
 }
+
