@@ -1,0 +1,6 @@
+{
+  "type": "module",
+  "dependencies": {
+    "@kubernetes/client-node": "^0.16.3"
+  }
+}
