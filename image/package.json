@@ -1,6 +1,6 @@
 {
   "type": "module",
   "dependencies": {
-    "runtime": "file:./runtime"
+    "runtime": "file:../controller/runtime"
   }
 }
