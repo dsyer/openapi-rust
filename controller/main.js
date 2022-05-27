@@ -1,4 +1,5 @@
 import * as k8s from "@kubernetes/client-node";
+import { xform } from "../image/bundle.js";
 
 const CUSTOMRESOURCE_GROUP = "example.com";
 const CUSTOMRESOURCE_VERSION = "v1";
@@ -78,11 +79,7 @@ async function reconcileNow(obj) {
 	reconcileScheduled = false;
 	const image = new V1Image(obj);
 	log(`Reconciling ${image.metadata.name}`);
-	var status = new V1ImageStatus();
-	if (image.spec.image.includes("nginx")) {
-		status.complete = true;
-		status.latestImage = `${image.spec.image}@latest`;
-	}
+	var status = await xform(image);
 	image.status = status;
 	await k8sApiImage.replaceNamespacedCustomObjectStatus(CUSTOMRESOURCE_GROUP, CUSTOMRESOURCE_VERSION, image.metadata.namespace, CUSTOMRESOURCE_PLURAL, image.metadata.name, image);
 }
