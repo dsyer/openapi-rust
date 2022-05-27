@@ -1,4 +1,4 @@
-A simple example of a Kubenetes controller in JavaScript.
+A simple example of a Kubenetes controller in JavaScript. Code mostly copied from [Tech Squad](https://techsquad.rocks/blog/custom_kubernetes_operator_with_typescript/) with business logic from my [Cartograppher Demo](https://github.com/dsyer/carto-demo).
 
 Set up the CRD:
 
@@ -26,7 +26,7 @@ and:
 5/26/2022, 11:07:48 AM: Reconciling demo
 ```
 
-Modify the resource and apply it again, then delete itnd watch the controller logs:
+Modify the resource and apply it again, then delete it and watch the controller logs:
 
 ```
 5/26/2022, 11:11:20 AM: Received event in phase MODIFIED.
