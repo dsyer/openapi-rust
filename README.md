@@ -1,6 +1,9 @@
-This project shows how to generate [Rust](https://www.rust-lang.org/) bindings for [Kubernetes](https://kubernetes.io) API objects, and use them to build a [Web Assembly](https://webassembly.org/) (WASM). You could use such a WASM to transform an object or extract some status from it, and plug it into a generic webhook or controller.
+This project shows how to generate [Rust](https://www.rust-lang.org/) bindings for [Kubernetes](https://kubernetes.io) API objects, and use them to build a [Web Assembly](https://webassembly.org/) (WASM). You could use such a WASM to transform an object or extract some status from it, and plug it into a generic webhook or controller. There are two WASM modules to build:
 
-## Building and Using the WASM
+* "wasm": transforms a Kubernetes Deployment resource, adding labels and selectors, making it "valid".
+* "image": takes a CRD representing a container image, and queries the repository for its latest sha256.
+
+## The Deployment Transformer
 
 To build a WASM and some Javascript glue code to light it up you need a Kubernetes cluster and the `kubectl` command line:
 
@@ -87,6 +90,124 @@ then
 ```
 
 You can reset everything with `make clean`.
+
+## The Image Transformer
+
+This WASM takes an image resource and calculates a status for it that has the latest sha256 from the repository. It imports an async function `getWithHeaders()` that does the work of sending an HTTP GET and returning the result as an object. The translation of the result into WASM memory is handled by `wasm-bindgen` so it only really works with a JavaScript runtime.
+
+```
+$ cd image
+$ make
+```
+
+The imported `getWithHeaders()` is defined like this:
+
+```rust
+#[wasm_bindgen(module = "runtime")]
+extern "C" {
+    async fn getWithHeaders(url: &str, headers_json: &str) -> JsValue;
+}
+```
+
+which creates a dependency in JavaScript on library called "runtime", so we have to add that to `package.json`:
+
+```json
+{
+  "type": "module",
+  "dependencies": {
+    "runtime": "file:./runtime"
+  }
+}
+```
+
+and `npm install` it. The "runtime" library is just a simple wrapper around the `http` builtin from Node.js:
+
+```javascript
+import http from 'http';
+
+function get(url, headers) {
+	return new Promise((resolve, reject) => {
+		http.get(url, { "headers": headers }, response => {
+			response.setEncoding('utf8');
+			let data = '';
+			response.on('data', (chunk) => {
+				data += chunk.toString();
+			});
+			response.on('end', () => {
+				resolve({data: data, headers: response.headers, status: response.statusCode});
+			});
+			response.on('error', (error) => {
+				reject(error);
+			});
+		});
+	});
+}
+
+export async function getWithHeaders(url, headers) {
+	var result = await get(url, headers);
+	return JSON.stringify(result);
+}
+```
+
+With that library in place we can run the WASM from the command line:
+
+```
+$ node
+> var {xform} = await import('./bundle.js')
+undefined
+> await xform({spec:{image:"localhost:5000/apps/demo"}})
+{
+  complete: true,
+  latestImage: 'localhost:5000/apps/demo@sha256:95c043ec7f3c9d5688b4e834a42ad41b936559984f4630323eaf726824a803fa'
+}
+```
+
+## Kubernetes Controller
+
+There is a Kubernetes controller that uses the image transformer from the last section to update the status of an image resource. It is written in Node.js using the `@kubernetes/client-node` library. That way we can simply `import` the `xform` function from the `bundle.js` in the "image" module and call it to calculate the image status.
+
+Set up the CRD:
+
+```
+$ kubectl apply -f image.yaml
+```
+
+Run the controller:
+
+```
+$ node main.js
+5/26/2022, 11:07:47 AM: Watching API
+```
+
+Add an image resource and delete it:
+
+```
+$ kubectl apply -f demo.yaml
+```
+
+and:
+
+```
+5/26/2022, 11:07:47 AM: Received event in phase ADDED.
+5/26/2022, 11:07:48 AM: Reconciling demo
+```
+
+Modify the resource and apply it again, then delete it and watch the controller logs:
+
+```
+5/26/2022, 11:11:20 AM: Received event in phase MODIFIED.
+5/26/2022, 11:11:21 AM: Reconciling demo
+5/26/2022, 11:17:53 AM: Received event in phase DELETED.
+5/26/2022, 11:17:53 AM: Deleted demo
+```
+
+and see the result:
+
+```
+$ kubectl get images
+NAME   IMAGE                      LATEST
+demo   localhost:5000/apps/demo   localhost:5000/apps/demo@sha256:95c043ec7f3c9d5688b4e834a42ad41b936559984f4630323eaf726824a803fa
+```
 
 ## Calling WASM from Rust
 
