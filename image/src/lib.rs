@@ -19,8 +19,8 @@ extern "C" {
 }
 
 #[wasm_bindgen]
-pub async fn xform(json: String) -> JsValue {
-    let image: V1Image = serde_json::from_str(&json).unwrap();
+pub async fn xform(json: JsValue) -> JsValue {
+    let image: V1Image = json.into_serde().unwrap();
     let mut status = V1ImageStatus::new();
     status.complete = Some(false);
     match image.spec {
@@ -45,7 +45,7 @@ pub async fn xform(json: String) -> JsValue {
     } else {
         Some(false)
     };
-    return JsValue::from_str(&serde_json::to_string(&status).unwrap());
+    return JsValue::from_serde(&status).unwrap();
 }
 
 fn computeManifestUrl(image: String) -> String {
@@ -74,19 +74,16 @@ async fn fetchImageSha(path: String) -> Option<String> {
     let headers = serde_json::json!({
         "accept": "application/vnd.docker.distribution.manifest.v2+json"
     });
-    let result = getWithHeaders(url.as_str(), headers.to_string().as_str()).await.as_string()?;
-    if result.len()==0 {
+    let result = getWithHeaders(url.as_str(), headers.to_string().as_str()).await;
+    if result == JsValue::UNDEFINED {
         return None;
     } else {
         return extractImage(result);
     }
 }
 
-fn extractImage(json: String) -> Option<String> {
-    if json.len()==0 {
-        return None;
-    }
-    let manifest: serde_json::Value = serde_json::from_str(json.as_str()).ok()?;
+fn extractImage(json: JsValue) -> Option<String> {
+    let manifest: serde_json::Value = json.into_serde().ok()?;
     let headers = &manifest["headers"];
     if headers["Docker-Content-Digest"] != serde_json::json!(null) {
         return Some(headers["Docker-Content-Digest"].as_str()?.to_string());

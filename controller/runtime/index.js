@@ -20,7 +20,7 @@ function get(url, headers) {
 
 export async function getWithHeaders(url, headers) {
 	var result = await get(url, headers);
-	return JSON.stringify(result);
+	return result;
 }
 
 export function log(str) {

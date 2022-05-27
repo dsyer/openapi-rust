@@ -145,7 +145,7 @@ function get(url, headers) {
 
 export async function getWithHeaders(url, headers) {
 	var result = await get(url, headers);
-	return JSON.stringify(result);
+	return result;
 }
 ```
 
@@ -159,6 +159,24 @@ undefined
 {
   complete: true,
   latestImage: 'localhost:5000/apps/demo@sha256:95c043ec7f3c9d5688b4e834a42ad41b936559984f4630323eaf726824a803fa'
+}
+```
+
+Since we are stuck with a JavaScript runtime, we don't have to bother serializing and deserializing the objects into strings as they pass in and out of the WASM (`wasm-bindgen` does that for us). So the Rust code for the WASM is a little different in that the functions can just accept and return `JsValue`:
+
+```rust
+#[wasm_bindgen(module = "runtime")]
+extern "C" {
+    async fn getWithHeaders(url: &str, headers_json: &str) -> JsValue;
+    fn log(value: String);
+}
+
+#[wasm_bindgen]
+pub async fn xform(json: JsValue) -> JsValue {
+    let image: V1Image = json.into_serde().unwrap();
+    let mut status = V1ImageStatus::new();
+    // calculate status...
+    return JsValue::from_serde(&status).unwrap();
 }
 ```
 
