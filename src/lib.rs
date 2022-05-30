@@ -1,12 +1,4 @@
-#[macro_use]
-extern crate serde_derive;
-
-extern crate serde;
-extern crate serde_json;
-
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
-
-mod models;
 
 #[wasm_bindgen(module = "runtime")]
 extern "C" {
