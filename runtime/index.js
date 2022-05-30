@@ -9,7 +9,7 @@ function get(url, headers) {
 				data += chunk.toString();
 			});
 			response.on('end', () => {
-				resolve({data: data, headers: response.headers, status: response.statusCode});
+				resolve({data: JSON.parse(data), headers: response.headers, status: response.statusCode});
 			});
 			response.on('error', (error) => {
 				reject(error);
