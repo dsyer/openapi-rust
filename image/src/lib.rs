@@ -58,6 +58,9 @@ fn computeManifestUrl(image: String) -> String {
     if !image.contains(".") && !image.contains(":") {
         // No host
         path = format!("index.docker.io/{}", path);
+        // N.B. actually this won't work because we need an authentication
+        // token too (https://docs.docker.com/registry/spec/auth/token/#how-to-authenticate).
+        // It's do-able, but not here yet...
     }
     path = path.replacen("/", "/v2/", 1);
     if path.starts_with("localhost") {
